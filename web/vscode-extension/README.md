@@ -1,51 +1,92 @@
 # Code Analyzer VS Code Extension
 
-This directory contains the main VS Code extension. The actual user interface for displaying analysis results is a webview application located in the `webview-ui/` subdirectory.
+## Overview
 
-## Webview UI
+The Code Analyzer VS Code Extension provides a user interface within VS Code to analyze code. It allows users to input code snippets or select files (feature to be implemented) and view analysis results, such as potential issues, complexity metrics, and more. The UI is built using web technologies (React, Material UI) and rendered inside a VS Code Webview Panel.
 
-The frontend for the extension's webview is a React application built with Rsbuild, Material UI, and TypeScript.
+This extension serves as the bridge between the VS Code environment and the webview UI, managing the webview's lifecycle and facilitating two-way communication.
 
-*   **Source Code**: `web/vscode-extension/webview-ui/`
-*   **README**: Detailed information about the webview UI, its setup, and development can be found in `web/vscode-extension/webview-ui/README.md`.
+## How to Build and Run
 
-### Building the Webview UI
+### Prerequisites
 
-To build the webview UI for integration into the extension:
+*   [Node.js](https://nodejs.org/) (LTS version recommended, e.g., 18.x or 20.x)
+*   [pnpm](https://pnpm.io/) (Package manager, version specified in `package.json`'s `packageManager` field, e.g., `pnpm@10.11.0`)
 
-1.  Navigate to the webview UI directory:
-    ```bash
-    cd webview-ui
-    ```
-2.  Install dependencies (if not already done):
+### Installation
+
+1.  **Install Extension Dependencies:**
+    Navigate to the extension's root directory (`web/vscode-extension/`) and run:
     ```bash
     pnpm install
     ```
-3.  Build the UI:
+    This installs dependencies like `@types/vscode` and `typescript`.
+
+2.  **Install Webview UI Dependencies:**
+    Navigate to the webview UI directory (`web/vscode-extension/webview-ui/`) and run:
     ```bash
-    pnpm build
+    pnpm install
     ```
-This will generate a production build in `web/vscode-extension/webview-ui/dist/`. The main entry point will be `index.html` in that directory.
+    This installs React, Material UI, TanStack libraries, and other UI-related dependencies. The `pnpm install` command should be run using the pnpm version specified in `webview-ui/package.json` (e.g., `npx pnpm@10.11.0 install` if you have npx available and need to use a specific pnpm version).
 
-## Integrating the Webview into the VS Code Extension
+### Compiling the Extension
 
-The VS Code extension (actual source code for which is TBD in this directory, e.g., `src/extension.ts`) will need to:
+To compile the TypeScript code for the extension, run the following command in the `web/vscode-extension/` directory:
 
-1.  **Create a Webview Panel**: Use the `vscode.window.createWebviewPanel` API.
-2.  **Load Webview Content**:
-    *   Read the `index.html` file from the `webview-ui/dist/` directory.
-    *   Adjust asset paths in the HTML content to correctly point to JS/CSS files within the `dist` folder, using `webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'webview-ui', 'dist', ...))` for each asset.
-3.  **Implement Message Passing**:
-    *   Use `webview.onDidReceiveMessage` to handle messages sent from the webview UI (e.g., file selection, user actions).
-    *   Use `webview.postMessage` to send data to the webview UI (e.g., analysis results, file lists).
-4.  **Manage State and Backend Interaction**: The extension will be responsible for fetching code, triggering the Go-based analysis backend, and relaying results to the webview.
+```bash
+pnpm run compile
+```
+This will transpile the TypeScript files from `src/` to JavaScript files in the `out/` directory, as configured in `tsconfig.json`. This step is usually automatically run as part of `vscode:prepublish` script before packaging the extension.
 
-## Future Development TODOs (Extension-Level)
+### Running the Extension in VS Code
 
-*   **Extension Entry Point**: Implement `src/extension.ts` (or similar) with `activate` and `deactivate` functions.
-*   **Commands and UI Contributions**: Define VS Code commands (e.g., "Analyze Current File," "Open Analyzer Panel") and contribute them to the UI (e.g., command palette, editor context menus).
-*   **Webview Panel Management**: Implement logic to create, show, and dispose of the webview panel.
-*   **Backend Communication**: Design and implement the mechanism for the extension to invoke the Go analyzer and receive results. This might involve child processes, local HTTP calls if the backend is a server, or other IPC methods.
-*   **Configuration**: Add settings for the extension (e.g., path to analyzer executable, analysis options).
-*   **Error Handling**: Robust error handling for backend interactions and webview loading.
-*   **Testing**: Implement tests for the extension logic.
+1.  **Open the Project:**
+    Open the root folder of this repository (the one containing `web/vscode-extension/`) in Visual Studio Code.
+
+2.  **Start Debugging (Launch Extension Development Host):**
+    *   Press `F5`. This is the default key to start debugging and will open a new VS Code window titled "[Extension Development Host]".
+    *   Alternatively, you can go to the "Run and Debug" view (Ctrl+Shift+D or Cmd+Shift+D on Mac), ensure "Run Extension" is selected in the dropdown, then click the green play button.
+
+3.  **Open the Code Analyzer Panel:**
+    Once the Extension Development Host window is active:
+    *   Open the Command Palette (Ctrl+Shift+P or Cmd+Shift+P on Mac).
+    *   Type "Show Code Analyzer Panel" and select the command.
+    *   This will open the webview panel, typically in its own editor tab.
+
+## Architecture
+
+The extension consists of two main parts:
+
+1.  **VS Code Extension (`src/extension.ts`):**
+    *   This is the core of the extension that interacts with the VS Code API.
+    *   It's responsible for registering commands (like opening the webview panel), creating and managing the webview panel itself, and handling communication to/from the webview.
+    *   The main logic is within `src/extension.ts`.
+    *   It also handles any direct interactions with the VS Code workspace, filesystem, or backend services (like the simulated API call in this example).
+
+2.  **Webview UI (`webview-ui/`):**
+    *   This is a separate web application (built with React, Material UI, TanStack Query, and TanStack Router) that provides the user interface displayed within the webview panel.
+    *   It's located in the `webview-ui/` directory and has its own `package.json` for dependencies and build scripts (e.g., using Rsbuild).
+    *   The UI is built into static assets (HTML, CSS, JavaScript) which are then loaded by the webview panel. The paths to these assets are dynamically constructed in `extension.ts` to work with VS Code's security model (`asWebviewUri`).
+
+### Communication Mechanism
+
+Communication between the extension and the webview UI is achieved using VS Code's `postMessage` API.
+
+*   **Extension to Webview:** The extension can send messages to the webview using `panel.webview.postMessage({ type: '...', payload: ... })`.
+*   **Webview to Extension:** The webview UI can send messages to the extension using `vscode.postMessage({ type: '...', payload: ... })` (where `vscode` is an API object acquired by `acquireVsCodeApi()` in the webview).
+
+A request/response pattern is implemented to facilitate more complex interactions, especially for data fetching or operations initiated by the webview that require action from the extension:
+*   Messages typically include a `type` (to identify the action/command) and a `payload`.
+*   For request-response, a unique `requestId` is generated by the initiator (usually the webview). The responder (the extension) includes this `requestId` in its response message.
+*   This allows the initiator to match responses to their original requests, enabling asynchronous operations to be handled with promises.
+*   This pattern is primarily managed in `webview-ui/src/vscodeApi.ts`, which provides helper functions like `postMessageWithResponse`.
+
+### Key Files
+
+*   **`web/vscode-extension/src/extension.ts`:** The main entry point for the VS Code extension logic. Handles panel creation, command registration, message routing with the webview, and any backend interactions.
+*   **`web/vscode-extension/webview-ui/src/vscodeApi.ts`:** Contains the logic for communication between the webview UI and the extension, including the promise-based request/response mechanism (`postMessageWithResponse`) and general message listening (`addMessageListener`).
+*   **`web/vscode-extension/webview-ui/src/App.tsx`:** The main layout component for the React-based webview UI. It sets up routing using TanStack Router (`<Outlet />`) and can provide global context to child routes.
+*   **`web/vscode-extension/webview-ui/package.json`:** Defines dependencies and build scripts for the webview UI.
+*   **`web/vscode-extension/package.json`:** Defines dependencies and build scripts for the extension itself.
+*   **`web/vscode-extension/tsconfig.json`:** TypeScript configuration for the extension.
+*   **`web/vscode-extension/webview-ui/tsconfig.json`:** TypeScript configuration for the webview UI.
