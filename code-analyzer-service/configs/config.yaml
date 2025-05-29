@@ -1,0 +1,6 @@
+server:
+  port: "8080" # Port should be a string for r.Run
+logging:
+  level: "warn" # Changed to warn for testing
+storage_service:
+  url: "http://localhost:8081/api/v1" # Base URL for storage-service API

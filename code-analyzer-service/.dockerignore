@@ -1,0 +1,34 @@
+# Git specific
+.git
+.gitignore
+
+# Go specific
+*.go # Source files are built in the builder stage, not needed in final image unless for specific reason
+
+# IDE/Editor specific
+.idea
+.vscode
+*.iml
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Local development files/folders
+*.md # READMEs, etc., unless specifically needed in the image
+# Add any other local dev files or large assets not needed in the image
+bin/
+vendor/ # If you vendor dependencies but prefer `go mod download` in Docker
+
+# Docker specific (if any Dockerfile.local exists)
+Dockerfile.local
+
+# Test files (if not needed in the image context for some reason, though often they are small)
+*_test.go
+
+# Temporary files
+*.tmp
+*.temp
+
+# Config files that might be mounted externally or are examples
+# configs/config.example.yaml # Keep configs/config.yaml if it's a default to be bundled

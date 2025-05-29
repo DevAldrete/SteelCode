@@ -1,0 +1,6 @@
+server:
+  port: "8081" # Different port from code-analyzer-service
+logging:
+  level: "info"
+database:
+  url: "postgresql://user:password@localhost:5432/analysis_db?sslmode=disable" # Example DB URL
