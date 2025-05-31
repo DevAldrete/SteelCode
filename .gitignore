@@ -79,3 +79,10 @@ jspm_packages/
 # Build outputs
 dist/
 build/
+
+# VSCode Extension Files
+out
+dist
+node_modules
+.vscode-test/
+*.vsix
